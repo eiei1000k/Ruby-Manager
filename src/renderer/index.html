@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:">
+  <title>Ruby Manager</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">
+          <path d="M8 5h16l6 8-14 15L2 13z" fill="var(--ruby)"/>
+          <path d="M8 5l8 8 8-8M2 13h28M16 13v15" stroke="rgba(255,255,255,.45)" stroke-width="1.4" fill="none"/>
+        </svg>
+        <span>Ruby Manager</span>
+      </div>
+      <nav class="nav" id="nav"></nav>
+      <div class="side-title">リポジトリ</div>
+      <div class="side-projects" id="side-projects"></div>
+      <button class="btn ghost small add-proj" data-action="addProjects">＋ リポジトリを追加</button>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <h1 id="view-title">概要</h1>
+        <div class="top-actions">
+          <span class="muted small" id="scan-status"></span>
+          <button class="btn" data-action="rescan">⟳ 再スキャン</button>
+        </div>
+      </header>
+      <section class="view" id="view"></section>
+    </main>
+  </div>
+  <section class="log" id="log"></section>
+  <div id="modal-root"></div>
+  <div id="toasts"></div>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "name": "ruby-manager",
+  "version": "0.1.0",
+  "description": "Ruby のバージョンとリポジトリごとの Bundler を視覚的に管理するデスクトップアプリ",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
+  },
+  "author": "eiei1000k",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0"
+  },
+  "productName": "Ruby Manager",
+  "build": {
+    "appId": "dev.eiei1000k.rubymanager",
+    "productName": "Ruby Manager",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development",
+      "maintainer": "eiei1000k"
+    }
+  }
+}
