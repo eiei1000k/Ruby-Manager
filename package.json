@@ -46,5 +46,16 @@
       "category": "Development",
       "maintainer": "eiei1000k"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eiei1000k/Ruby-Manager.git"
+  },
+  "homepage": "https://github.com/eiei1000k/Ruby-Manager#readme",
+  "bugs": {
+    "url": "https://github.com/eiei1000k/Ruby-Manager/issues"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
