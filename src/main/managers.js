@@ -226,19 +226,38 @@ const rubyinstaller = {
     this.canInstall = w.code === 0;
     return true;
   },
-  async list() {
+  /** PATH 上で ruby を持つディレクトリ。shims（mise など）は shim: true */
+  pathRubyDirs(env) {
+    const key = Object.keys(env).find((k) => k.toUpperCase() === 'PATH') || 'Path';
+    return (env[key] || '').split(path.delimiter).filter(Boolean)
+      .map((d) => ({ dir: d, shim: /[\\/]shims[\\/]?$/i.test(d) }))
+      .filter(({ dir, shim }) => fs.existsSync(rubyExe(dir)) || (shim && ['ruby.cmd', 'ruby.bat'].some((f) => fs.existsSync(path.join(dir, f)))));
+  },
+  async list(env) {
     const roots = ['C:\\', 'C:\\tools', path.join(process.env.LOCALAPPDATA || '', 'Programs')];
     const out = [];
+    const seen = new Set();
+    const add = (binDir, label) => {
+      const k = path.resolve(binDir).toLowerCase();
+      if (seen.has(k)) return;
+      seen.add(k);
+      out.push({ version: null, binDir, label });
+    };
     for (const root of roots) {
       for (const d of readdirSafe(root)) {
         if (!d.isDirectory() || !/^ruby\d/i.test(d.name)) continue;
         const binDir = path.join(root, d.name, 'bin');
-        if (fs.existsSync(rubyExe(binDir))) out.push({ version: null, binDir, label: d.name });
+        if (fs.existsSync(rubyExe(binDir))) add(binDir, d.name);
       }
     }
+    for (const { dir, shim } of this.pathRubyDirs(env)) if (!shim) add(dir, path.basename(path.dirname(dir)));
     return out;
   },
-  async getGlobal() { return null; },
+  async getGlobal(env) {
+    // PATH で最初に見つかる ruby がグローバル。shims が先なら mise などが決めるので関与しない
+    const first = this.pathRubyDirs(env)[0];
+    return first && !first.shim ? rubyVersionOf(first.dir, env) : null;
+  },
   async setGlobal() { return { code: 1, stdout: '', stderr: 'RubyInstaller ではシステム環境変数 PATH の順序でグローバルが決まります。' }; },
   async listRemote() {
     return ['4.0', '3.4', '3.3', '3.2', '3.1'];

@@ -14,6 +14,47 @@ function quoteWin(arg) {
 }
 
 /**
+ * 子プロセスを終了する。Windows では shell (cmd.exe) 経由で起動しているため、
+ * child.kill() だと cmd.exe だけが終わり bundle.bat などの先の ruby.exe が残る。プロセスツリーごと終了させる。
+ */
+function kill(child) {
+  if (!child || child.exitCode != null) return;
+  if (isWin && child.pid) {
+    const k = spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
+    k.on('error', () => child.kill());
+  } else {
+    child.kill();
+  }
+}
+
+// Windows: cmd.exe 自身のメッセージなどはコンソールのコードページ (日本語環境では CP932) で出力される。
+// UTF-8 として読めない出力が来たら、そのストリームはコードページで読み直す。
+const LEGACY_ENCODINGS = { 932: 'shift_jis', 936: 'gbk', 949: 'euc-kr', 950: 'big5', 1252: 'windows-1252' };
+let legacyEncoding = null;
+function detectLegacyEncoding() {
+  if (!isWin || legacyEncoding) return;
+  legacyEncoding = 'utf-8';
+  try {
+    const out = require('child_process').execFileSync('chcp.com', [], { windowsHide: true, timeout: 5000 }).toString();
+    const m = out.match(/(\d+)\s*$/);
+    if (m && LEGACY_ENCODINGS[m[1]]) legacyEncoding = LEGACY_ENCODINGS[m[1]];
+  } catch { /* ignore */ }
+}
+
+function makeDecoder() {
+  if (!isWin) return (buf) => buf.toString();
+  detectLegacyEncoding();
+  let utf8 = new TextDecoder('utf-8', { fatal: true });
+  let legacy = null;
+  return (buf) => {
+    if (!legacy) {
+      try { return utf8.decode(buf, { stream: true }); } catch { legacy = new TextDecoder(legacyEncoding); utf8 = null; }
+    }
+    return legacy.decode(buf, { stream: true });
+  };
+}
+
+/**
  * コマンドを実行し、終了を待つ。
  * Windows では .cmd/.bat (rbenv, bundle.bat 等) を解決するため shell 経由で起動する。
  */
@@ -34,9 +75,11 @@ function run(cmd, args = [], opts = {}) {
     let stdout = '';
     let stderr = '';
     let timer = null;
-    if (opts.timeout) timer = setTimeout(() => child.kill(), opts.timeout);
-    child.stdout.on('data', (d) => { const s = d.toString(); stdout += s; opts.onData && opts.onData(s, 'stdout'); });
-    child.stderr.on('data', (d) => { const s = d.toString(); stderr += s; opts.onData && opts.onData(s, 'stderr'); });
+    if (opts.timeout) timer = setTimeout(() => kill(child), opts.timeout);
+    const decOut = makeDecoder();
+    const decErr = makeDecoder();
+    child.stdout.on('data', (d) => { const s = decOut(d); stdout += s; opts.onData && opts.onData(s, 'stdout'); });
+    child.stderr.on('data', (d) => { const s = decErr(d); stderr += s; opts.onData && opts.onData(s, 'stderr'); });
     child.on('error', (e) => { if (timer) clearTimeout(timer); resolve({ code: -1, stdout, stderr: stderr + String(e.message || e) }); });
     child.on('close', (code) => { if (timer) clearTimeout(timer); resolve({ code: code == null ? -1 : code, stdout, stderr }); });
     if (opts.onSpawn) opts.onSpawn(child);
@@ -48,7 +91,8 @@ function fallbackPaths() {
   const h = os.homedir();
   if (isWin) {
     const local = process.env.LOCALAPPDATA || path.join(h, 'AppData', 'Local');
-    return [path.join(local, 'mise', 'shims'), path.join(local, 'Microsoft', 'WinGet', 'Links')];
+    // winget 本体は WindowsApps にあるが、ユーザー PATH から外れている環境がある
+    return [path.join(local, 'mise', 'shims'), path.join(local, 'Microsoft', 'WinGet', 'Links'), path.join(local, 'Microsoft', 'WindowsApps')];
   }
   return [
     path.join(h, '.rbenv', 'bin'), path.join(h, '.rbenv', 'shims'),
@@ -99,4 +143,4 @@ function envWithRuby(baseEnv, binDir, version) {
   return env;
 }
 
-module.exports = { run, loadShellEnv, envWithRuby, isWin };
+module.exports = { run, kill, loadShellEnv, envWithRuby, isWin };

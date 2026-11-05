@@ -2,7 +2,7 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const { run, loadShellEnv, envWithRuby } = require('./exec');
+const { run, kill, loadShellEnv, envWithRuby } = require('./exec');
 const managers = require('./managers');
 const project = require('./project');
 const { parseOutdated } = require('./lockfile');
@@ -233,7 +233,7 @@ function registerIpc() {
 
   handle('job:cancel', async (id) => {
     const j = jobs.get(id);
-    if (j && j.child) j.child.kill();
+    if (j && j.child) kill(j.child);
     return true;
   });
 
@@ -272,6 +272,6 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  for (const j of jobs.values()) if (j.child) j.child.kill();
+  for (const j of jobs.values()) if (j.child) kill(j.child);
   if (process.platform !== 'darwin') app.quit();
 });
