@@ -1,5 +1,5 @@
 'use strict';
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { run, kill, loadShellEnv, envWithRuby } = require('./exec');
@@ -237,11 +237,22 @@ function registerIpc() {
     return true;
   });
 
+  handle('theme:set', async (theme) => {
+    nativeTheme.themeSource = ['light', 'dark'].includes(theme) ? theme : 'system';
+    if (win && !win.isDestroyed()) win.setBackgroundColor(windowBackground());
+    return nativeTheme.shouldUseDarkColors;
+  });
+
   handle('shell:openPath', async (p) => shell.openPath(p));
   handle('shell:openExternal', async (url) => {
     if (!/^https:\/\//.test(url)) throw new Error('https のみ');
     return shell.openExternal(url);
   });
+}
+
+// iOS の systemGroupedBackground に合わせる
+function windowBackground() {
+  return nativeTheme.shouldUseDarkColors ? '#000000' : '#f2f2f7';
 }
 
 function createWindow() {
@@ -251,8 +262,10 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     title: 'Ruby Manager',
-    backgroundColor: '#14121a',
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    ...(process.platform === 'darwin'
+      ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 18, y: 18 } }
+      : {}),
+    backgroundColor: windowBackground(),
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload.js'),
       contextIsolation: true,

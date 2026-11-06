@@ -8,6 +8,8 @@ async function call(name, ...args) {
 }
 
 contextBridge.exposeInMainWorld('api', {
+  platform: process.platform,
+  setTheme: (theme) => call('theme:set', theme),
   scan: () => call('env:scan'),
   rubyDetail: (id) => call('ruby:detail', id),
   listRemote: (manager, all) => call('ruby:remote', manager, all),

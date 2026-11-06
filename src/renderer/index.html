@@ -11,29 +11,33 @@
   <div class="app">
     <aside class="sidebar">
       <div class="brand">
-        <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">
-          <path d="M8 5h16l6 8-14 15L2 13z" fill="var(--ruby)"/>
-          <path d="M8 5l8 8 8-8M2 13h28M16 13v15" stroke="rgba(255,255,255,.45)" stroke-width="1.4" fill="none"/>
-        </svg>
-        <span>Ruby Manager</span>
+        <span class="sq" style="--c:var(--red)">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>
+        </span>
+        <div>
+          <div class="brand-name">Ruby Manager</div>
+          <div class="brand-sub" id="brand-sub">スキャン中…</div>
+        </div>
       </div>
-      <nav class="nav" id="nav"></nav>
-      <div class="side-title">リポジトリ</div>
-      <div class="side-projects" id="side-projects"></div>
-      <button class="btn ghost small add-proj" data-action="addProjects">＋ リポジトリを追加</button>
+      <div class="search" id="side-search"></div>
+      <div class="side-scroll">
+        <div id="nav"></div>
+        <div id="side-projects"></div>
+      </div>
+      <div class="side-foot" id="side-foot"></div>
     </aside>
     <main class="main">
-      <header class="topbar">
-        <h1 id="view-title">概要</h1>
-        <div class="top-actions">
-          <span class="muted small" id="scan-status"></span>
-          <button class="btn" data-action="rescan">⟳ 再スキャン</button>
+      <header class="topbar" id="topbar">
+        <div>
+          <h1 id="view-title">概要</h1>
+          <div class="subtitle" id="view-sub"></div>
         </div>
+        <div class="top-actions" id="top-actions"></div>
       </header>
       <section class="view" id="view"></section>
     </main>
   </div>
-  <section class="log" id="log"></section>
+  <section id="log"></section>
   <div id="modal-root"></div>
   <div id="toasts"></div>
   <script src="app.js"></script>
