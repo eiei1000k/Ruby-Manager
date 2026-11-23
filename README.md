@@ -7,7 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/eiei1000k/Ruby-Manager?display_name=tag&sort=semver)](https://github.com/eiei1000k/Ruby-Manager/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
-![Electron](https://img.shields.io/badge/built%20with-Electron-47848F?logo=electron&logoColor=white)
+![Tauri](https://img.shields.io/badge/built%20with-Tauri%20%2B%20Rust-24C8DB?logo=tauri&logoColor=white)
 
 [ダウンロード](#ダウンロード) · [はじめかた](#はじめかた) · [機能](#機能) · [対応環境](#対応しているバージョンマネージャ) · [トラブルシューティング](#トラブルシューティング) · [開発](#開発)
 
@@ -35,8 +35,8 @@
 
 | OS | ファイル | 備考 |
 |---|---|---|
-| **macOS** | `.dmg`（または `.zip`） | Apple シリコン / Intel |
-| **Windows** | `Setup .exe`（インストーラ）/ ポータブル版 `.exe` | Windows 10 / 11 |
+| **macOS** | `.dmg` | Apple シリコン / Intel |
+| **Windows** | `setup.exe`（インストーラ） | Windows 10 / 11（WebView2 が必要。Windows 11 は標準で入っています） |
 | **Linux** | `.AppImage` / `.deb` | x64 |
 
 > [!NOTE]
@@ -187,49 +187,58 @@ Ruby Manager は利用状況やデータを外部に送信しません。ネッ�
 
 ## 開発
 
-Node.js 20 以上が必要です。
+バックエンドは Rust（[Tauri 2](https://v2.tauri.app/)）、UI はフレームワークなしの HTML / CSS / JavaScript です。次のものが必要です。
+
+- [Rust](https://www.rust-lang.org/tools/install)（stable、1.80 以上）
+- Node.js 20 以上（Tauri CLI の実行に使います）
+- OS ごとの依存パッケージ（[Tauri の前提条件](https://v2.tauri.app/start/prerequisites/)）
+  - Windows: Microsoft C++ Build Tools と WebView2（Windows 11 は標準で入っています）
+  - macOS: Xcode Command Line Tools
+  - Linux: `libwebkit2gtk-4.1-dev` `libgtk-3-dev` `librsvg2-dev` など
 
 ```sh
 git clone https://github.com/eiei1000k/Ruby-Manager.git
 cd Ruby-Manager
 npm install
-npm start      # アプリを起動
-npm test       # Gemfile.lock パーサとバージョン判定のテスト
+npm start      # アプリを起動（tauri dev）
+npm test       # Rust のテスト（cargo test）。Gemfile.lock パーサ、バージョン判定、リポジトリ診断など
 ```
 
 ### パッケージのビルド
 
 ```sh
-npm run dist:mac     # .dmg / .zip
-npm run dist:win     # NSIS インストーラ / ポータブル .exe
-npm run dist:linux   # AppImage / .deb
+npm run dist   # tauri build
 ```
 
-成果物は `dist/` に出力されます。各 OS 向けのパッケージは、その OS 上でビルドしてください。
+実行している OS 向けのパッケージ（macOS: `.app` / `.dmg`、Windows: NSIS インストーラ、Linux: AppImage / `.deb`）が `src-tauri/target/release/bundle/` に出力されます。各 OS 向けのパッケージは、その OS 上でビルドしてください。インストール不要で使いたい場合は、`src-tauri/target/release/` の実行ファイルをそのまま使えます。
+
+アイコンを差し替えるときは、1024px 程度の PNG を用意して `npx tauri icon path/to/icon.png` を実行してください。
 
 ### ディレクトリ構成
 
 ```
-src/
-├── main/
-│   ├── main.js       Electron メインプロセス、IPC、ジョブ（コマンド）の実行
-│   ├── managers.js   バージョンマネージャごとのアダプタ
-│   ├── project.js    リポジトリの解析（バージョンファイル・Gemfile・.bundle/config）
-│   ├── lockfile.js   Gemfile.lock と bundle outdated の出力のパーサ
-│   ├── versions.js   バージョン比較・要件判定・サポート期間（EOL）の表
-│   └── exec.js       コマンド実行、ログインシェルの環境変数の取得
-├── preload.js        レンダラーに公開する API
-└── renderer/         UI（HTML / CSS / JavaScript、フレームワークなし。iOS 風のデザイン）
-test/                 node:test によるテスト
+src-tauri/                Rust バックエンド（Tauri）
+├── src/
+│   ├── lib.rs            コマンド（レンダラーからの呼び出し）、ジョブ（コマンド）の実行とログ配信、ウィンドウ
+│   ├── managers.rs       バージョンマネージャごとのアダプタ
+│   ├── project.rs        リポジトリの解析（バージョンファイル・Gemfile・.bundle/config）
+│   ├── lockfile.rs       Gemfile.lock と bundle outdated の出力のパーサ
+│   ├── versions.rs       バージョン比較・要件判定・サポート期間（EOL）の表
+│   └── exec.rs           コマンド実行、ログインシェルの環境変数の取得、Windows のコードページ対応
+├── tests/fixtures/       テスト用のリポジトリ
+├── capabilities/         レンダラーに許可する権限
+└── tauri.conf.json       アプリ名・バンドル設定
+src/renderer/             UI（HTML / CSS / JavaScript、フレームワークなし。iOS 風のデザイン）
+└── api.js                Rust のコマンドを呼び出す window.api
 ```
 
-新しいバージョンマネージャに対応するには、`src/main/managers.js` にアダプタ（`detect` / `list` / `getGlobal` / `setGlobal` / `listRemote` / `installCmd` / `uninstallCmd` / `execCmd`）を追加して、`ALL` に登録します。
+新しいバージョンマネージャに対応するには、`src-tauri/src/managers.rs` の `Kind` に種類を追加し、`Manager` の各メソッド（`detect` / `list` / `get_global` / `set_global` / `list_remote` / `install_cmd` / `uninstall_cmd` / `exec_cmd`）に分岐を足して、`ALL` に登録します。
 
-Ruby のサポート期間は `src/main/versions.js` の `EOL` 表で管理しています。新しいブランチが出たら、[公式のブランチ保守状況](https://www.ruby-lang.org/ja/downloads/branches/)に合わせて更新してください。
+Ruby のサポート期間は `src-tauri/src/versions.rs` の `EOL` 表で管理しています。新しいブランチが出たら、[公式のブランチ保守状況](https://www.ruby-lang.org/ja/downloads/branches/)に合わせて更新してください。
 
 ## コントリビュート
 
-Issue や Pull Request を歓迎します。Pull Request を送る前に `npm test` が通ることを確認してください。UI を変更した場合は、ライト / ダーク両方のスクリーンショットを添えてもらえると助かります。
+Issue や Pull Request を歓迎します。Pull Request を送る前に `npm test`（`cargo test`）が通ることを確認してください。UI を変更した場合は、ライト / ダーク両方のスクリーンショットを添えてもらえると助かります。
 
 ## ライセンス
 

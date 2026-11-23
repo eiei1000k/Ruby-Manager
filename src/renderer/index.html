@@ -3,14 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:">
   <title>Ruby Manager</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="app">
-    <aside class="sidebar">
-      <div class="brand">
+    <aside class="sidebar" data-tauri-drag-region>
+      <div class="brand" data-tauri-drag-region>
         <span class="sq" style="--c:var(--red)">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>
         </span>
@@ -27,7 +26,7 @@
       <div class="side-foot" id="side-foot"></div>
     </aside>
     <main class="main">
-      <header class="topbar" id="topbar">
+      <header class="topbar" id="topbar" data-tauri-drag-region>
         <div>
           <h1 id="view-title">概要</h1>
           <div class="subtitle" id="view-sub"></div>
@@ -40,6 +39,7 @@
   <section id="log"></section>
   <div id="modal-root"></div>
   <div id="toasts"></div>
+  <script src="api.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

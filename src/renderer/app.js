@@ -137,9 +137,15 @@ function projectsUsing(ruby) { return S.projects.filter((p) => p.resolved && p.r
 function currentProject() { return S.projects.find((p) => p.path === S.selected); }
 
 // ================================================================ theme
+/** CSS 側は data-theme で切り替える（WebView の prefers-color-scheme に頼らない） */
+function setThemeAttr(t) {
+  if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  else delete document.documentElement.dataset.theme;
+}
 function applyTheme(t) {
   S.theme = t;
   try { localStorage.setItem('theme', t); } catch { /* ignore */ }
+  setThemeAttr(t);
   guard(() => api.setTheme(t));
   renderSideFoot();
 }
@@ -661,7 +667,7 @@ const actions = {
   openProject: (d) => { S.view = 'project'; S.selected = d.path; S.tab = 'overview'; S.gemFilter = ''; render(); },
   refreshProject: (d) => refreshProject(d.path),
   async removeProject(d) {
-    if (!confirm(`登録を解除しますか？（ファイルは削除されません）\n${d.path}`)) return;
+    if (!(await api.confirm(`登録を解除しますか？（ファイルは削除されません）\n${d.path}`))) return;
     await guard(() => api.removeProject(d.path));
     S.projects = S.projects.filter((p) => p.path !== d.path);
     S.view = 'overview';
@@ -670,13 +676,13 @@ const actions = {
   tab: (d) => { S.tab = d.tab; render(); },
 
   async installRuby(d) {
-    if (!confirm(`Ruby ${d.version} を ${d.manager} でインストールしますか？\n（ビルドに数分かかる場合があります）`)) return;
+    if (!(await api.confirm(`Ruby ${d.version} を ${d.manager} でインストールしますか？\n（ビルドに数分かかる場合があります）`))) return;
     closeModal();
     await guard(() => api.installRuby(d.manager, d.version));
   },
   async uninstallRuby(d) {
     const used = Number(d.used || 0);
-    if (!confirm(`Ruby ${d.version} (${d.manager}) を削除しますか？${used ? `\n⚠ ${used} 件のリポジトリが使用中です` : ''}\nこの操作は元に戻せません。`)) return;
+    if (!(await api.confirm(`Ruby ${d.version} (${d.manager}) を削除しますか？${used ? `\n⚠ ${used} 件のリポジトリが使用中です` : ''}\nこの操作は元に戻せません。`))) return;
     const id = await guard(() => api.uninstallRuby(d.manager, d.version));
     if (id === null) { toast(`Ruby ${d.version} を削除しました`); rescan(); }
   },
@@ -694,8 +700,8 @@ const actions = {
     render();
   },
   async bundle(d, el) {
-    if (d.op === 'clean' && !confirm('bundle clean は Gemfile に含まれない gem を削除します。続行しますか？')) return;
-    if (d.op === 'update' && !confirm('すべての gem を更新します（Gemfile.lock が変更されます）。続行しますか？')) return;
+    if (d.op === 'clean' && !(await api.confirm('bundle clean は Gemfile に含まれない gem を削除します。続行しますか？'))) return;
+    if (d.op === 'update' && !(await api.confirm('すべての gem を更新します（Gemfile.lock が変更されます）。続行しますか？'))) return;
     const opts = { value: d.value === '1', platform: d.platform };
     const id = await guard(() => api.bundle(d.path, d.op, opts));
     if (id) jobMeta.set(id, { project: d.path, kind: d.op });
@@ -754,6 +760,7 @@ $('#view').addEventListener('scroll', (e) => $('#topbar').classList.toggle('scro
 // ================================================================ boot
 document.documentElement.classList.add(`platform-${api.platform}`);
 try { S.theme = localStorage.getItem('theme') || 'system'; } catch { /* ignore */ }
+setThemeAttr(S.theme);
 if (S.theme !== 'system') guard(() => api.setTheme(S.theme));
 render();
 rescan();

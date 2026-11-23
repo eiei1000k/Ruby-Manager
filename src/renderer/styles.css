@@ -38,7 +38,7 @@
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #000000;
     --cell: #1c1c1e;
     --cell-2: #2c2c2e;
@@ -68,6 +68,37 @@
     --brown: #ac8e68;
     color-scheme: dark;
   }
+}
+/* 外観で「ダーク」を選んだとき */
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --cell: #1c1c1e;
+  --cell-2: #2c2c2e;
+  --fill: rgba(120, 120, 128, .36);
+  --fill-2: rgba(120, 120, 128, .32);
+  --fill-3: rgba(118, 118, 128, .24);
+  --fill-4: rgba(118, 118, 128, .18);
+  --label: #ffffff;
+  --label-2: rgba(235, 235, 245, .6);
+  --label-3: rgba(235, 235, 245, .3);
+  --sep: rgba(84, 84, 88, .65);
+  --seg-thumb: #636366;
+  --sheet-bg: #1c1c1e;          /* elevated */
+  --sheet-cell: #2c2c2e;
+
+  --red: #ff453a;
+  --orange: #ff9f0a;
+  --yellow: #ffd60a;
+  --green: #30d158;
+  --mint: #63e6e2;
+  --teal: #40c8e0;
+  --cyan: #64d2ff;
+  --blue: #0a84ff;
+  --indigo: #5e5ce6;
+  --purple: #bf5af2;
+  --pink: #ff375f;
+  --brown: #ac8e68;
+  color-scheme: dark;
 }
 
 /* ============================================================ base */
