@@ -76,7 +76,7 @@ function cmpVer(a, b) {
   }
   return 0;
 }
-/** シリーズ（3.3 等）ごとに iOS システムカラーを割り当てる */
+/** シリーズ（3.3 等）ごとに iOS風 システムカラーを割り当てる */
 function seriesColor(v) {
   const [maj, min] = series(v).split('.').map(Number);
   if (Number.isNaN(maj)) return 'var(--gray)';
@@ -99,7 +99,7 @@ function verSq(v, cls = '') {
 }
 const chev = () => icon('chevronRight', 'chev');
 
-/** iOS の inset grouped セクション */
+/** iOS風 の inset grouped セクション */
 function group(head, body, foot = '', headAction = '') {
   return `<section class="group">${head || headAction ? `<div class="group-head"><span>${head || ''}</span><span class="spacer"></span>${headAction}</div>` : ''}
     <div class="list">${body}</div>${foot ? `<div class="group-foot">${foot}</div>` : ''}</section>`;
@@ -110,7 +110,7 @@ function cell({ lead = '', title = '', sub = '', value = '', acc = '', attrs = '
     <div class="cell-text"><div class="cell-title">${title}</div>${sub ? `<div class="cell-sub">${sub}</div>` : ''}</div>
     ${value !== '' && value != null ? `<div class="cell-value">${value}</div>` : ''}${acc}</div></div>`;
 }
-/** タップで実行するアクション行（iOS のテキストボタン行） */
+/** タップで実行するアクション行（iOS風 のテキストボタン行） */
 function actionCell(label, ic, attrs, { destructive = false, disabled = false } = {}) {
   return `<div class="cell action ${destructive ? 'destructive' : ''}" role="button" tabindex="${disabled ? -1 : 0}" ${attrs} ${disabled ? 'disabled' : ''}>
     <div class="cell-main"><div class="cell-text"><div class="cell-title">${ic ? icon(ic) : ''}<span>${label}</span></div></div></div></div>`;
